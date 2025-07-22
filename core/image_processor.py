@@ -5,7 +5,7 @@ Based on user-provided polar image creation code
 
 import h5py
 import numpy as np
-'''import pyproj'''
+import pyproj
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 import pathlib
@@ -29,14 +29,14 @@ class ImageProcessor:
         # Grid registration offset
         self.GRID_ORIGIN_COL = -0.5
         self.GRID_ORIGIN_ROW = -0.5
-        '''
+
         # Set up projection
         self.ease2_north = pyproj.CRS.from_epsg(6931)  # EASE-Grid 2.0 North
         self.wgs84 = pyproj.CRS.from_epsg(4326)  # WGS84
         self.transformer = pyproj.Transformer.from_crs(
             self.wgs84, self.ease2_north, always_xy=True
         )
-        '''
+
     def create_polar_image(self, h5_files: List[pathlib.Path],
                            orbit_type: str, pole: str = "N") -> Optional[np.ndarray]:
         """
