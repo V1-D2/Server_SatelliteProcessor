@@ -262,6 +262,10 @@ class PolarCircleWindow(BaseFunctionWindow):
             color_path = output_dir / "polar_color.png"
             self.image_processor.save_color_image(result_data, color_path)
 
+            # Save viridis image
+            viridis_path = output_dir / "polar_viridis.png"  # or appropriate name
+            self.image_processor.save_viridis_image(result_data, viridis_path)
+
             # Save grayscale image
             gray_path = output_dir / "polar_grayscale.png"
             self.image_processor.save_grayscale_image(result_data, gray_path)
@@ -532,6 +536,9 @@ class SingleStripWindow(BaseFunctionWindow):
             # Save color image
             color_path = output_dir / f"{file_info['name']}_color.png"
             self.image_processor.save_color_image(temp_data, color_path)
+
+            viridis_path = output_dir / "polar_viridis.png"  # or appropriate name
+            self.image_processor.save_viridis_image(temp_data, viridis_path)
 
             # Save grayscale image
             gray_path = output_dir / f"{file_info['name']}_grayscale.png"

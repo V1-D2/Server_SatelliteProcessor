@@ -358,6 +358,39 @@ class ImageProcessor:
         img = Image.fromarray(data_uint8, mode='L')
         img.save(output_path)
 
+    def save_viridis_image(self, data: np.ndarray, output_path: pathlib.Path):
+        """Save data as viridis colormap image"""
+        # Handle NaN values
+        valid_mask = ~np.isnan(data)
+        if not np.any(valid_mask):
+            print("No valid data to save")
+            return
+
+        # Get data range
+        vmin = np.nanmin(data)
+        vmax = np.nanmax(data)
+
+        # Create figure without margins
+        h, w = data.shape
+        dpi = 100
+        fig = plt.figure(figsize=(w / dpi, h / dpi), dpi=dpi)
+        ax = plt.axes([0, 0, 1, 1])
+        ax.axis('off')
+
+        # Plot with viridis colormap
+        im = ax.imshow(
+            data,
+            cmap='viridis',
+            vmin=vmin,
+            vmax=vmax,
+            interpolation='nearest',
+            aspect='auto'
+        )
+
+        # Save
+        plt.savefig(output_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
+        plt.close()
+
     def tensor2img(self, tensor_list):
         """
         Convert tensor to grayscale image (placeholder for user's method)
