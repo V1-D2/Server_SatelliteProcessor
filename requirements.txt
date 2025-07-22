@@ -1,0 +1,24 @@
+# Core dependencies
+numpy>=1.21.0
+matplotlib>=3.4.0
+h5py>=3.0.0
+pyproj>=3.0.0
+Pillow>=8.0.0
+scipy>=1.7.0
+xarray>=0.19.0
+
+# Progress bars
+tqdm>=4.60.0
+
+# For GPORTAL API (assuming it's available via pip, otherwise needs manual installation)
+# gportal
+
+# GUI (tkinter is included with Python)
+
+# Build tools (for creating executable)
+pyinstaller>=5.0
+
+# Optional dependencies for development
+# pytest>=6.0.0
+# black>=21.0
+# flake8>=3.9.0
