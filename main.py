@@ -42,23 +42,31 @@ class SatelliteProcessor:
     def run(self):
         """Main application flow"""
         try:
+            # Start the main loop first
+            self.root.after(100, self.initialize_app)
+            self.root.mainloop()
+        except Exception as e:
+            messagebox.showerror("Error", f"Application error: {str(e)}")
+            self.cleanup_and_exit()
+
+    def initialize_app(self):
+        """Initialize app after mainloop starts"""
+        try:
             # Step 1: Check and handle authentication
             if not self.check_authentication():
                 self.show_login()
+                return
 
             # Step 2: Check and handle output path
-            if self.authenticated and not self.check_output_path():
+            if not self.check_output_path():
                 self.show_path_selector()
+                return
 
-            # Step 3: Show main window if everything is set up
-            if self.authenticated and self.output_path_set:
-                self.show_main_window()
-            else:
-                # User cancelled setup
-                self.cleanup_and_exit()
+            # Step 3: Show main window
+            self.show_main_window()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Application error: {str(e)}")
+            messagebox.showerror("Error", f"Initialization error: {str(e)}")
             self.cleanup_and_exit()
 
     def check_authentication(self):
@@ -86,23 +94,31 @@ class SatelliteProcessor:
 
     def show_login(self):
         """Show login window"""
-        login_window = LoginWindow(self.root, self.auth_manager)
-        self.root.wait_window(login_window.window)
 
-        if login_window.login_successful:
-            self.authenticated = True
-        else:
-            self.cleanup_and_exit()
+        def on_login_complete():
+            if hasattr(self, '_login_window') and self._login_window.login_successful:
+                self.authenticated = True
+                self.root.after(100, self.initialize_app)
+            else:
+                self.cleanup_and_exit()
+
+        self._login_window = LoginWindow(self.root, self.auth_manager)
+        self.root.wait_window(self._login_window.window)
+        on_login_complete()
 
     def show_path_selector(self):
         """Show path selection window"""
-        path_window = PathSelector(self.root, self.path_manager)
-        self.root.wait_window(path_window.window)
 
-        if path_window.path_selected:
-            self.output_path_set = True
-        else:
-            self.cleanup_and_exit()
+        def on_path_complete():
+            if hasattr(self, '_path_window') and self._path_window.path_selected:
+                self.output_path_set = True
+                self.root.after(100, self.initialize_app)
+            else:
+                self.cleanup_and_exit()
+
+        self._path_window = PathSelector(self.root, self.path_manager)
+        self.root.wait_window(self._path_window.window)
+        on_path_complete()
 
     def show_main_window(self):
         """Show main application window"""

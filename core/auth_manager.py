@@ -53,25 +53,68 @@ class AuthManager:
             return False
 
     def test_credentials(self, username, password):
-        """Test credentials with gportal API"""
+        """Test credentials with gportal API by attempting to download a file"""
         try:
             # Import gportal module
             import gportal
+            import datetime as dt
+            import pathlib
+            import tempfile
+
+            print(f"Testing credentials for user: {username}")
 
             # Set credentials
             gportal.username = username
             gportal.password = password
 
-            # Try to access datasets to test authentication
-            # This will raise an exception if credentials are invalid
+            # Get datasets
             datasets = gportal.datasets()
+            _DS = datasets["GCOM-W/AMSR2"]["LEVEL1"]
+            DS_L1B_TB = _DS["L1B-Brightness temperature（TB）"][0]
 
-            # If we got here, credentials are valid
-            return True
+            # Search for recent data (try last few days)
+            test_file = None
+            for days_back in range(1, 8):  # Try up to 7 days back
+                test_date = dt.date.today() - dt.timedelta(days=days_back)
 
+                res = gportal.search(
+                    dataset_ids=[DS_L1B_TB],
+                    start_time=f"{test_date}T00:00:00",
+                    end_time=f"{test_date}T23:59:59"
+                )
+
+                if res.matched() > 0:
+                    test_file = list(res.products())[0]  # Get first file
+                    print(f"Found test file from {test_date}: {test_file['identifier']}")
+                    break
+
+            if not test_file:
+                print("No recent files found for credential testing")
+                return False
+
+            # Try to download the file - this is the real authentication test
+            with tempfile.TemporaryDirectory() as temp_dir:
+                print("Attempting download to test credentials...")
+
+                try:
+                    local_path = gportal.download(
+                        test_file,
+                        local_dir=temp_dir
+                    )
+                    print("Download successful - credentials are valid!")
+
+                    # Clean up is automatic with tempfile.TemporaryDirectory
+                    return True
+
+                except Exception as download_error:
+                    print(f"Download failed - invalid credentials: {download_error}")
+                    return False
+
+        except ImportError:
+            print("Error: gportal module not found. Please install it.")
+            return False
         except Exception as e:
-            # Authentication failed
-            print(f"Authentication test failed: {e}")
+            print(f"Credential test failed: {e}")
             return False
 
     def clear_credentials(self):

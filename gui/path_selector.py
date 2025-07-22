@@ -18,14 +18,14 @@ class PathSelector:
         # Create window
         self.window = tk.Toplevel(parent)
         self.window.title("SatProcessor - Select Output Directory")
-        self.window.geometry("500x200")
+        self.window.geometry("500x280")
         self.window.resizable(False, False)
 
         # Center window
         self.window.update_idletasks()
         x = (self.window.winfo_screenwidth() // 2) - (500 // 2)
-        y = (self.window.winfo_screenheight() // 2) - (200 // 2)
-        self.window.geometry(f"500x200+{x}+{y}")
+        y = (self.window.winfo_screenheight() // 2) - (280 // 2)
+        self.window.geometry(f"500x280+{x}+{y}")
 
         # Prevent closing
         self.window.protocol("WM_DELETE_WINDOW", self.on_cancel)
@@ -60,23 +60,23 @@ class PathSelector:
         self.path_entry = ttk.Entry(
             path_frame,
             textvariable=self.path_var,
-            width=50,
+            width=40,
             state="readonly"
         )
-        self.path_entry.pack(side="left", padx=(0, 10))
+        self.path_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
 
         # Browse button
         browse_button = ttk.Button(
             path_frame,
             text="Browse...",
             command=self.on_browse,
-            width=10
+            width=12
         )
-        browse_button.pack(side="left")
+        browse_button.pack(side="right")
 
         # Buttons frame
         button_frame = ttk.Frame(self.window)
-        button_frame.pack(pady=10)
+        button_frame.pack(pady=20)
 
         # OK button
         self.ok_button = ttk.Button(
