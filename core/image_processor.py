@@ -391,6 +391,72 @@ class ImageProcessor:
         plt.savefig(output_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
         plt.close()
 
+    def save_color_image_percentile(self, data: np.ndarray, output_path: pathlib.Path):
+        """Save data as color image using turbo colormap with percentile filtering"""
+        # Handle NaN values
+        valid_mask = ~np.isnan(data)
+        if not np.any(valid_mask):
+            print("No valid data to save")
+            return
+
+        # Use percentile for better contrast
+        p_low, p_high = 1, 99
+        vmin = np.nanpercentile(data, p_low)
+        vmax = np.nanpercentile(data, p_high)
+
+        # Create figure without margins
+        h, w = data.shape
+        dpi = 100
+        fig = plt.figure(figsize=(w / dpi, h / dpi), dpi=dpi)
+        ax = plt.axes([0, 0, 1, 1])
+        ax.axis('off')
+
+        # Plot with turbo colormap
+        im = ax.imshow(
+            data,
+            cmap='turbo',
+            vmin=vmin,
+            vmax=vmax,
+            interpolation='nearest',
+            aspect='auto'
+        )
+
+        # Save
+        plt.savefig(output_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
+        plt.close()
+
+    def save_grayscale_image_percentile(self, data: np.ndarray, output_path: pathlib.Path):
+        """Save data as grayscale image with percentile filtering"""
+        # Handle NaN values
+        valid_mask = ~np.isnan(data)
+        if not np.any(valid_mask):
+            print("No valid data to save")
+            return
+
+        # Normalize data to 0-255
+        data_normalized = data.copy()
+        data_normalized[~valid_mask] = np.nanmin(data)  # Fill NaN with min
+
+        # Use percentile
+        p_low, p_high = 1, 99
+        vmin = np.nanpercentile(data_normalized, p_low)
+        vmax = np.nanpercentile(data_normalized, p_high)
+
+        if vmax > vmin:
+            # Clip to percentile range first
+            data_normalized = np.clip(data_normalized, vmin, vmax)
+            # Then normalize
+            data_normalized = (data_normalized - vmin) / (vmax - vmin) * 255
+        else:
+            data_normalized = np.zeros_like(data_normalized)
+
+        # Convert to uint8
+        data_uint8 = data_normalized.astype(np.uint8)
+
+        # Save using PIL
+        img = Image.fromarray(data_uint8, mode='L')
+        img.save(output_path)
+
     def tensor2img(self, tensor_list):
         """
         Convert tensor to grayscale image (placeholder for user's method)
