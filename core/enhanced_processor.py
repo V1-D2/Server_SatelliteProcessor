@@ -16,14 +16,15 @@ logger = logging.getLogger(__name__)
 class EnhancedProcessor:
     """Processor for ML-enhanced satellite data"""
 
-    def __init__(self, model_path: pathlib.Path):
+    def __init__(self, model_path: pathlib.Path, device: str = None):
         """
         Initialize enhanced processor
 
         Args:
             model_path: Path to trained ML model
+            device: Device to use ('cuda' or 'cpu'), auto-detected if None
         """
-        self.sr_processor = TemperatureSRProcessor(model_path)
+        self.sr_processor = TemperatureSRProcessor(model_path, device=device)
 
     def extract_coordinates_from_h5(self, h5_path: pathlib.Path) -> Tuple[np.ndarray, np.ndarray]:
         """

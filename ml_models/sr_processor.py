@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 class TemperatureSRProcessor:
     """Temperature Super-Resolution Processor for 8x enhancement"""
 
-    def __init__(self, model_path: Path, device: str = 'cuda'):
+    def __init__(self, model_path: Path, device: str = None):
         """
         Initialize SR processor
 
@@ -30,7 +30,9 @@ class TemperatureSRProcessor:
             model_path: Path to trained model checkpoint
             device: Device to run on ('cuda' or 'cpu')
         """
-        self.device = torch.device(device if torch.cuda.is_available() else 'cpu')
+        if device is None:
+            device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device = torch.device(device)
         self.model = self._load_model(model_path)
         self.preprocessor = TemperatureDataPreprocessor()
 

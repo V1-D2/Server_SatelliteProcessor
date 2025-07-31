@@ -1,3 +1,5 @@
+import torch
+
 """Configuration for temperature SR model"""
 
 def load_config():
@@ -6,7 +8,7 @@ def load_config():
         'name': 'TemperatureSR_SwinIR_ESRGAN_x2_90k',
         'model_type': 'TemperatureSRModel',
         'scale': 2,
-        'num_gpu': 1,
+        'num_gpu': 1 if torch.cuda.is_available() else 0,
         'network_g': {
             'type': 'SwinIR',
             'upscale': 2,

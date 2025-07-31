@@ -622,7 +622,8 @@ class Enhance8xWindow(BaseFunctionWindow):
         # Initialize ML processor
         model_path = pathlib.Path(__file__).parent.parent / "ml_models" / "checkpoints" / "net_g_45738.pth"
         if model_path.exists():
-            self.enhanced_processor = EnhancedProcessor(model_path)
+            device_to_use = 'cuda' if torch is not None and torch.cuda.is_available() else 'cpu'
+            self.enhanced_processor = EnhancedProcessor(model_path, device=device_to_use)
             self.model_loaded = True
         else:
             self.enhanced_processor = None
