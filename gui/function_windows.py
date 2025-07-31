@@ -11,6 +11,7 @@ from core.gportal_client import GPortalClient
 from core.image_processor import ImageProcessor
 from core.data_handler import DataHandler
 from utils.device_utils import get_best_device
+import numpy as np
 
 
 try:
@@ -953,11 +954,26 @@ class Enhance8xWindow(BaseFunctionWindow):
 
 
 class PolarEnhanced8xWindow(BaseFunctionWindow):
-    """Placeholder window for 8x enhanced polar circle"""
+    """Window for 8x enhanced polar circle"""
 
     def __init__(self, parent, auth_manager, path_manager, file_manager):
         super().__init__(parent, auth_manager, path_manager, file_manager, "8x Enhanced Polar")
         self.center_window(500, 350)
+
+        # Initialize ML processor
+        model_path = pathlib.Path(__file__).parent.parent / "ml_models" / "checkpoints" / "net_g_45738.pth"
+        if model_path.exists():
+            if torch is not None:
+                device_obj, device_name = get_best_device()
+                self.enhanced_processor = EnhancedProcessor(model_path, device=str(device_obj))
+                print(f"Enhancement model loaded on: {device_name}")
+            else:
+                self.enhanced_processor = EnhancedProcessor(model_path, device='cpu')
+            self.model_loaded = True
+        else:
+            self.enhanced_processor = None
+            self.model_loaded = False
+
         self.create_widgets()
 
     def create_widgets(self):
@@ -970,14 +986,25 @@ class PolarEnhanced8xWindow(BaseFunctionWindow):
         )
         title_label.pack(pady=20)
 
-        # Info label
-        info_label = tk.Label(
-            self.window,
-            text="This feature is under development",
-            font=("Arial", 12),
-            fg="gray"
-        )
-        info_label.pack(pady=10)
+        if not self.model_loaded:
+            # Show error if model not found
+            error_label = tk.Label(
+                self.window,
+                text="Error: ML model not found!\nPlease ensure net_g_45738.pth is in ml_models/checkpoints/",
+                font=("Arial", 12),
+                fg="red"
+            )
+            error_label.pack(pady=20)
+
+            # Back button only
+            back_button = ttk.Button(
+                self.window,
+                text="Back",
+                command=self.on_close,
+                width=15
+            )
+            back_button.pack(pady=20)
+            return
 
         # Form frame
         form_frame = ttk.Frame(self.window)
@@ -1014,42 +1041,46 @@ class PolarEnhanced8xWindow(BaseFunctionWindow):
             value="D"
         ).pack(side="left", padx=5)
 
-        # Info text
-        info_text = """
-This feature will create an 8x enhanced polar image
-by processing multiple satellite passes and combining
-them into a high-resolution polar view.
+        # Pole selection (North only for now)
+        ttk.Label(form_frame, text="Pole:").grid(row=2, column=0, sticky="e", pady=10)
 
-Coming soon!
-        """
+        pole_frame = ttk.Frame(form_frame)
+        pole_frame.grid(row=2, column=1, pady=10, padx=10, sticky="w")
 
-        info_label2 = tk.Label(
-            self.window,
-            text=info_text,
-            font=("Arial", 10),
-            fg="gray",
-            justify="center"
-        )
-        info_label2.pack(pady=20)
+        self.pole_var = tk.StringVar(value="N")
+
+        ttk.Radiobutton(
+            pole_frame,
+            text="North",
+            variable=self.pole_var,
+            value="N"
+        ).pack(side="left", padx=5)
+
+        ttk.Radiobutton(
+            pole_frame,
+            text="South (Coming Soon)",
+            variable=self.pole_var,
+            value="S",
+            state="disabled"
+        ).pack(side="left", padx=5)
 
         # Buttons frame
         button_frame = ttk.Frame(self.window)
         button_frame.pack(pady=20)
 
-        # Process button (disabled)
+        # Process button (now enabled!)
         self.process_button = ttk.Button(
             button_frame,
             text="Process",
             command=self.on_process,
-            width=15,
-            state="disabled"
+            width=15
         )
         self.process_button.pack(side="left", padx=5)
 
         # Cancel button
         cancel_button = ttk.Button(
             button_frame,
-            text="Back",
+            text="Cancel",
             command=self.on_close,
             width=15
         )
@@ -1058,9 +1089,9 @@ Coming soon!
         # Status label
         self.status_label = tk.Label(
             self.window,
-            text="Feature under development",
+            text="Enter date and select options",
             font=("Arial", 9),
-            fg="gray"
+            fg="black"
         )
         self.status_label.pack(pady=10)
 
@@ -1069,6 +1100,7 @@ Coming soon!
         # Get inputs
         date_str = self.date_entry.get().strip()
         orbit_type = self.orbit_var.get()
+        pole = self.pole_var.get()
 
         # Validate date
         validator = DateValidator()
@@ -1085,22 +1117,104 @@ Coming soon!
         # Process in thread
         thread = threading.Thread(
             target=self.process_polar_enhanced,
-            args=(date_obj, orbit_type)
+            args=(date_obj, orbit_type, pole)
         )
         thread.daemon = True
         thread.start()
 
-    def process_polar_enhanced(self, date_obj, orbit_type):
-        """Process enhanced polar circle (placeholder implementation)"""
+    def process_polar_enhanced(self, date_obj, orbit_type, pole):
+        """Process enhanced polar circle"""
         try:
-            self.window.after(0, self.show_progress, "Processing 8x enhanced polar image...")
+            # Convert date
+            date_str = date_obj.strftime("%Y-%m-%d")
 
-            # TODO: Implement actual 8x enhancement here
-            # For now, just show a message
-            self.window.after(0, self.show_success, "8x enhancement processing would happen here")
+            # Update status
+            self.window.after(0, self.show_progress, "Connecting to GPORTAL...")
+
+            # Check data availability
+            self.window.after(0, self.show_progress, f"Checking data for {date_str}...")
+            available_files = self.gportal_client.check_availability(date_str, orbit_type)
+
+            if not available_files:
+                self.window.after(0, self.show_error, "No data available for this date")
+                return
+
+            self.window.after(0, self.show_progress, f"Found {len(available_files)} files. Downloading...")
+
+            # Download files
+            temp_dir = self.file_manager.get_temp_dir()
+            downloaded_files = self.gportal_client.download_files(
+                date_str,
+                orbit_type,
+                temp_dir,
+                progress_callback=lambda msg: self.window.after(0, self.show_progress, msg)
+            )
+
+            if not downloaded_files:
+                self.window.after(0, self.show_error, "Failed to download files")
+                return
+
+            # Process with 8x enhancement
+            self.window.after(0, self.show_progress,
+                              "Applying 8x enhancement to polar projection (this may take several minutes)...")
+
+            # Use the ML processor to create enhanced polar image
+            enhanced_result = self.enhanced_processor.sr_processor.process_polar_8x_enhanced(
+                downloaded_files,
+                orbit_type,
+                pole
+            )
+
+            # Create output directory
+            output_base = self.path_manager.get_output_path()
+            orbit_char = "A" if orbit_type == "A" else "D"
+            output_dir = output_base / f"{date_str}-{orbit_char}-{pole}-Enhanced8x"
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            # Save results
+            self.window.after(0, self.show_progress, "Saving enhanced polar image...")
+
+            # Get enhanced temperature data
+            polar_temp_8x = enhanced_result['temperature_8x']
+            percentile_range = enhanced_result['percentile_range']
+
+            # Save color image with percentile filtering
+            color_path = output_dir / "polar_enhanced_8x_color.png"
+            self.image_processor.save_color_image_percentile(polar_temp_8x, color_path)
+
+            # Save grayscale image with percentile filtering
+            gray_path = output_dir / "polar_enhanced_8x_grayscale.png"
+            self.image_processor.save_grayscale_image_percentile(polar_temp_8x, gray_path)
+
+            # Save temperature array
+            temp_path = output_dir / "temperature_data_enhanced_8x.npz"
+            np.savez_compressed(
+                temp_path,
+                temperature=polar_temp_8x,
+                statistics=enhanced_result['statistics'],
+                metadata=enhanced_result['metadata']
+            )
+
+            # Clean up
+            self.window.after(0, self.show_progress, "Cleaning up...")
+            self.file_manager.cleanup_temp()
+
+            # Success
+            self.window.after(
+                0,
+                self.show_success,
+                f"8x Enhanced processing complete!\nResults saved to:\n{output_dir}"
+            )
+
+            # Close window after delay
+            self.window.after(1500, self.on_close)
 
         except Exception as e:
             self.window.after(0, self.show_error, f"Processing failed: {str(e)}")
         finally:
-            self.window.after(0, lambda: self.process_button.config(state="normal"))
-            self.window.after(0, lambda: self.date_entry.config(state="normal"))
+            self.window.after(0, self.enable_controls)
+
+    def enable_controls(self):
+        """Re-enable controls"""
+        self.process_button.config(state="normal")
+        self.date_entry.config(state="normal")

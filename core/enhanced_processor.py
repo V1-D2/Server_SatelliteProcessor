@@ -9,6 +9,7 @@ import logging
 import h5py
 
 from ml_models import TemperatureSRProcessor
+from ml_models.sr_processor import EnhancedPolarProcessor
 
 logger = logging.getLogger(__name__)
 
