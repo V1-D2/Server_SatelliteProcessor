@@ -136,10 +136,28 @@ class TemperatureSRProcessor:
             'metadata': {**metadata, 'enhancement': '8x', 'method': 'cascaded_swinir'}
         }
 
+    def calculate_swinir_patch_size(self, input_shape: Tuple[int, int],
+                                    target_patch_size: Tuple[int, int] = (1000, 110)) -> Tuple[int, int]:
+        """Calculate optimal patch size for SwinIR"""
+        h, w = input_shape
+        window_size = 8  # SwinIR window size
+
+        # Ensure patch dimensions are divisible by window_size * scale
+        factor = window_size * 2  # scale = 2
+
+        patch_h = (target_patch_size[0] // factor) * factor
+        patch_w = (target_patch_size[1] // factor) * factor
+
+        # Ensure patches are not larger than input
+        patch_h = min(patch_h, h)
+        patch_w = min(patch_w, w)
+
+        return (patch_h, patch_w)
+
     def _enhance_2x(self, temperature: np.ndarray,
                     patch_size: Tuple[int, int] = (1000, 110),
                     overlap_ratio: float = 0.75) -> Tuple[np.ndarray, Dict]:
-        """Single 2x enhancement step"""
+        """Single 2x enhancement step with proper patch sizing"""
         h, w = temperature.shape
 
         # Calculate statistics before enhancement
@@ -157,6 +175,9 @@ class TemperatureSRProcessor:
         else:
             normalized = np.zeros_like(temperature)
 
+        # Adapt patch size to ensure divisibility
+        patch_size = self.calculate_swinir_patch_size((h, w), patch_size)
+
         # Process with patch-based approach
         patches = self._extract_patches(normalized, patch_size, overlap_ratio)
         sr_patches = []
@@ -165,7 +186,7 @@ class TemperatureSRProcessor:
             for patch_info in tqdm(patches, desc="Processing patches", leave=False):
                 patch = patch_info['data']
 
-                # Convert to tensor
+                # Convert to tensor - no padding needed as patch is already correct size
                 patch_tensor = torch.from_numpy(patch).float()
                 patch_tensor = patch_tensor.unsqueeze(0).unsqueeze(0).to(self.device)
 
@@ -287,27 +308,25 @@ class TemperatureSRProcessor:
 
         return output
 
-    def _create_gaussian_weight(self, shape: Tuple[int, int]) -> np.ndarray:
-        """Create Gaussian weight map for patch blending"""
+    def _create_gaussian_weight(self, shape: Tuple[int, int], sigma_ratio: float = 0.3) -> np.ndarray:
+        """Create 2D Gaussian weight map for smooth blending"""
         h, w = shape
 
-        # Create 1D Gaussian
-        def gaussian1d(size, sigma):
-            x = np.arange(size)
-            x = x - size // 2
-            g = np.exp(-(x ** 2) / (2 * sigma ** 2))
-            return g / g.max()
+        # Create coordinate grids
+        y, x = np.ogrid[:h, :w]
+        center_y, center_x = h / 2, w / 2
 
-        # Create 2D weight
-        sigma_h = h / 4
-        sigma_w = w / 4
+        # Calculate Gaussian weights
+        sigma_y = h * sigma_ratio
+        sigma_x = w * sigma_ratio
 
-        weight_h = gaussian1d(h, sigma_h)
-        weight_w = gaussian1d(w, sigma_w)
+        gaussian = np.exp(-((y - center_y) ** 2 / (2 * sigma_y ** 2) +
+                            (x - center_x) ** 2 / (2 * sigma_x ** 2)))
 
-        weight = weight_h[:, np.newaxis] * weight_w[np.newaxis, :]
+        # Normalize to [0, 1]
+        gaussian = (gaussian - gaussian.min()) / (gaussian.max() - gaussian.min())
 
-        return weight
+        return gaussian.astype(np.float32)
 
     def _upscale_coordinates(self, coords: np.ndarray, scale: int = 8) -> np.ndarray:
         """
