@@ -90,8 +90,8 @@ class MainWindow:
         buttons_data = [
             ("Polar Circle", "Create circular polar image", self.on_polar_circle),
             ("Single Strip", "Process single data strip", self.on_single_strip),
-            ("8x Enhance", "Enhance quality 8x (Coming Soon)", self.on_enhance_8x),
-            ("8x Polar", "Enhanced polar circle (Coming Soon)", self.on_polar_8x),
+            ("8x Enhance", "Enhance quality 8x", self.on_enhance_8x),  # Removed "Coming Soon"
+            ("8x Polar", "Enhanced polar circle", self.on_polar_8x),  # Removed "Coming Soon"
             ("Exit", "Close application", self.on_exit)
         ]
 
