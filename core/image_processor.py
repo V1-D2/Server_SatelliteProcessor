@@ -316,10 +316,19 @@ class ImageProcessor:
         ax = plt.axes([0, 0, 1, 1])
         ax.axis('off')
 
+        # Set black background for NaN values
+        import matplotlib.cm as cm
+        from matplotlib.colors import ListedColormap
+
+        # Get turbo colormap
+        turbo = cm.get_cmap('turbo')
+        # Set bad values (NaN) to black
+        turbo.set_bad(color='black')
+
         # Plot with turbo colormap
         im = ax.imshow(
             data,
-            cmap='turbo',
+            cmap=turbo,
             vmin=vmin,
             vmax=vmax,
             interpolation='nearest',
@@ -411,16 +420,24 @@ class ImageProcessor:
         ax = plt.axes([0, 0, 1, 1])
         ax.axis('off')
 
+        # Set black background for NaN values
+        import matplotlib.cm as cm
+        from matplotlib.colors import ListedColormap
+
+        # Get turbo colormap
+        turbo = cm.get_cmap('turbo')
+        # Set bad values (NaN) to black
+        turbo.set_bad(color='black')
+
         # Plot with turbo colormap
         im = ax.imshow(
             data,
-            cmap='turbo',
+            cmap=turbo,
             vmin=vmin,
             vmax=vmax,
             interpolation='nearest',
             aspect='auto'
         )
-
         # Save
         plt.savefig(output_path, dpi=dpi, bbox_inches='tight', pad_inches=0)
         plt.close()
