@@ -22,3 +22,4 @@ pyinstaller>=5.0
 # pytest>=6.0.0
 # black>=21.0
 # flake8>=3.9.0
+torch-directml; sys_platform == "win32"

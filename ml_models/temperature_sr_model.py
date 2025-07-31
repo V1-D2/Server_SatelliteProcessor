@@ -12,7 +12,12 @@ class TemperatureSRModel:
 
     def __init__(self, opt):
         self.opt = opt
-        self.device = torch.device('cuda' if opt.get('num_gpu', 0) > 0 else 'cpu')
+        if opt.get('device'):
+            self.device = torch.device(opt['device'])
+        else:
+            from utils.device_utils import get_best_device
+            self.device, device_name = get_best_device()
+            print(f"Temperature SR Model using: {device_name}")
 
         # Build generator only (no discriminator needed for inference)
         self.net_g = self.build_swinir_generator(opt)

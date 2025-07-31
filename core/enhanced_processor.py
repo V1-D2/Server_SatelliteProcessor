@@ -22,8 +22,14 @@ class EnhancedProcessor:
 
         Args:
             model_path: Path to trained ML model
-            device: Device to use ('cuda' or 'cpu'), auto-detected if None
+            device: Device to use, auto-detected if None
         """
+        if device is None:
+            from utils.device_utils import get_best_device
+            device_obj, device_name = get_best_device()
+            print(f"Enhanced Processor using: {device_name}")
+            device = str(device_obj)
+
         self.sr_processor = TemperatureSRProcessor(model_path, device=device)
 
     def extract_coordinates_from_h5(self, h5_path: pathlib.Path) -> Tuple[np.ndarray, np.ndarray]:

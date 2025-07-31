@@ -10,34 +10,19 @@ from utils.validators import DateValidator
 from core.gportal_client import GPortalClient
 from core.image_processor import ImageProcessor
 from core.data_handler import DataHandler
+from utils.device_utils import get_best_device
 
-# Add after existing imports
+
 try:
     import torch
-
-    # Check what's available on your Mac
-    if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
-        # Apple Silicon Mac (M1/M2/M3) - use Metal Performance Shaders
-        device = torch.device("mps")
-        print(f"Using Apple Silicon GPU: {device}")
-    elif torch.cuda.is_available():
-        # This won't happen on Mac, but kept for completeness
-        device = torch.device("cuda")
-        print(f"Using CUDA GPU: {device}")
-    else:
-        # Intel Mac or fallback
-        device = torch.device("cpu")
-        print(f"Using CPU: {device}")
-
-    # Print system info
+    device, device_name = get_best_device()
+    print(f"Using device: {device_name}")
     print(f"PyTorch version: {torch.__version__}")
-    if hasattr(torch.backends, 'mps'):
-        print(f"MPS available: {torch.backends.mps.is_available()}")
-
 except ImportError:
     print("PyTorch not available")
     torch = None
     device = None
+    device_name = "None"
 
 class BaseFunctionWindow:
     """Base class for function windows"""
@@ -622,8 +607,12 @@ class Enhance8xWindow(BaseFunctionWindow):
         # Initialize ML processor
         model_path = pathlib.Path(__file__).parent.parent / "ml_models" / "checkpoints" / "net_g_45738.pth"
         if model_path.exists():
-            device_to_use = 'cuda' if torch is not None and torch.cuda.is_available() else 'cpu'
-            self.enhanced_processor = EnhancedProcessor(model_path, device=device_to_use)
+            if torch is not None:
+                device_obj, device_name = get_best_device()
+                self.enhanced_processor = EnhancedProcessor(model_path, device=str(device_obj))
+                print(f"Enhancement model loaded on: {device_name}")
+            else:
+                self.enhanced_processor = EnhancedProcessor(model_path, device='cpu')
             self.model_loaded = True
         else:
             self.enhanced_processor = None

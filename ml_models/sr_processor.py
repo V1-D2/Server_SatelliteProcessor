@@ -31,8 +31,11 @@ class TemperatureSRProcessor:
             device: Device to run on ('cuda' or 'cpu')
         """
         if device is None:
-            device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.device = torch.device(device)
+            from utils.device_utils import get_best_device
+            self.device, device_name = get_best_device()
+            print(f"SR Processor using: {device_name}")
+        else:
+            self.device = torch.device(device)
         self.model = self._load_model(model_path)
         self.preprocessor = TemperatureDataPreprocessor()
 
