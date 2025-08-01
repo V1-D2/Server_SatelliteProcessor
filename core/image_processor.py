@@ -17,7 +17,7 @@ class ImageProcessor:
     """Processes satellite data into images"""
 
     def __init__(self):
-        # EASE-Grid 2.0 North parameters (from user's code)
+        # EASE-Grid 2.0 parameters (same for North and South)
         self.PIXEL_SIZE_M = 10000.0  # 10 km pixels
         self.GRID_WIDTH = 1800  # Official grid width
         self.GRID_HEIGHT = 1800  # Official grid height
@@ -30,12 +30,13 @@ class ImageProcessor:
         self.GRID_ORIGIN_COL = -0.5
         self.GRID_ORIGIN_ROW = -0.5
 
-        # Set up projection
+        # Set up projections for both poles
         self.ease2_north = pyproj.CRS.from_epsg(6931)  # EASE-Grid 2.0 North
+        self.ease2_south = pyproj.CRS.from_epsg(6932)  # EASE-Grid 2.0 South
         self.wgs84 = pyproj.CRS.from_epsg(4326)  # WGS84
-        self.transformer = pyproj.Transformer.from_crs(
-            self.wgs84, self.ease2_north, always_xy=True
-        )
+
+        # Initialize transformers (will be set based on pole)
+        self.transformer = None
 
     def create_polar_image(self, h5_files: List[pathlib.Path],
                            orbit_type: str, pole: str = "N") -> Optional[np.ndarray]:
@@ -45,14 +46,20 @@ class ImageProcessor:
         Args:
             h5_files: List of HDF5 file paths
             orbit_type: 'A' for ascending, 'D' for descending
-            pole: 'N' for north, 'S' for south (only N implemented)
+            pole: 'N' for north, 'S' for south
 
         Returns:
             Temperature array or None
         """
-        if pole == "S":
-            # South pole not yet implemented
-            raise NotImplementedError("South pole processing not yet implemented")
+        # Set up transformer based on pole
+        if pole == "N":
+            self.transformer = pyproj.Transformer.from_crs(
+                self.wgs84, self.ease2_north, always_xy=True
+            )
+        else:  # pole == "S"
+            self.transformer = pyproj.Transformer.from_crs(
+                self.wgs84, self.ease2_south, always_xy=True
+            )
 
         # Create grids
         grid, weight, count, distance_from_pole = self._create_ease2_grid()
@@ -61,7 +68,7 @@ class ImageProcessor:
         for idx, h5_path in enumerate(h5_files):
             try:
                 self._add_swath_to_grid(
-                    h5_path, grid, weight, count, idx, orbit_type
+                    h5_path, grid, weight, count, idx, orbit_type, pole
                 )
             except Exception as e:
                 print(f"Error processing {h5_path.name}: {e}")
@@ -92,7 +99,7 @@ class ImageProcessor:
 
     def _add_swath_to_grid(self, h5_path: pathlib.Path, grid: np.ndarray,
                            weight: np.ndarray, count: np.ndarray,
-                           swath_idx: int, orbit_type: str):
+                           swath_idx: int, orbit_type: str, pole: str = "N"):
         """Add data from one swath file to the grid"""
         with h5py.File(h5_path, "r") as h5:
             # Extract temperature data
@@ -116,20 +123,25 @@ class ImageProcessor:
             # Get coordinates
             lat, lon = self._calculate_lat_lon_36ghz(h5)
 
-            # Filter for Northern Hemisphere
-            north_mask = lat >= 0
-            if not np.any(north_mask):
+            # Filter for correct hemisphere
+            if pole == "N":
+                hemisphere_mask = lat >= 0
+            else:  # pole == "S"
+                hemisphere_mask = lat <= 0
+
+            if not np.any(hemisphere_mask):
                 return
 
             # Transform to EASE-Grid 2.0
-            x_ease2, y_ease2 = self._latlon_to_ease2_north(lat, lon)
+            x_ease2, y_ease2 = self._latlon_to_ease2(lat, lon)
 
             # Get grid bounds
             x_min, x_max, y_min, y_max = self._get_grid_bounds()
 
             # Valid data mask
+            # Valid data mask
             valid_mask = (
-                    north_mask &
+                    hemisphere_mask &
                     ~np.isnan(tb) &
                     (x_ease2 >= x_min) & (x_ease2 <= x_max) &
                     (y_ease2 >= y_min) & (y_ease2 <= y_max) &
@@ -167,8 +179,8 @@ class ImageProcessor:
                 weight[y_idx, x_idx] += 1.0
                 count[y_idx, x_idx] += 1
 
-    def _latlon_to_ease2_north(self, lat, lon):
-        """Transform coordinates to EASE-Grid 2.0 North"""
+    def _latlon_to_ease2(self, lat, lon):
+        """Transform coordinates to EASE-Grid 2.0 (North or South based on current transformer)"""
         x, y = self.transformer.transform(lon, lat)
         x = np.where(np.isinf(x), np.nan, x)
         y = np.where(np.isinf(y), np.nan, y)

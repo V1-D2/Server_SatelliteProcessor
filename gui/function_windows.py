@@ -152,10 +152,9 @@ class PolarCircleWindow(BaseFunctionWindow):
 
         ttk.Radiobutton(
             pole_frame,
-            text="South (Coming Soon)",
+            text="South",
             variable=self.pole_var,
-            value="S",
-            state="disabled"
+            value="S"
         ).pack(side="left", padx=5)
 
         # Buttons frame
@@ -1058,10 +1057,9 @@ class PolarEnhanced8xWindow(BaseFunctionWindow):
 
         ttk.Radiobutton(
             pole_frame,
-            text="South (Coming Soon)",
+            text="South",
             variable=self.pole_var,
-            value="S",
-            state="disabled"
+            value="S"
         ).pack(side="left", padx=5)
 
         # Buttons frame

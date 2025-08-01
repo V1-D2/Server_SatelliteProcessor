@@ -485,17 +485,28 @@ class EnhancedPolarProcessor:
         self.GRID_ORIGIN_COL = -0.5
         self.GRID_ORIGIN_ROW = -0.5
 
-        # Set up projection
+        # Set up projections
         import pyproj
         self.ease2_north = pyproj.CRS.from_epsg(6931)
+        self.ease2_south = pyproj.CRS.from_epsg(6932)
         self.wgs84 = pyproj.CRS.from_epsg(4326)
-        self.transformer = pyproj.Transformer.from_crs(
-            self.wgs84, self.ease2_north, always_xy=True
-        )
+
+        # Transformer will be set based on pole
+        self.transformer = None
 
     def create_enhanced_polar_image(self, enhanced_swaths: List[Dict],
                                     orbit_type: str, pole: str = "N") -> np.ndarray:
         """Create 8x enhanced polar image from enhanced swaths"""
+
+        # Set up transformer based on pole
+        if pole == "N":
+            self.transformer = pyproj.Transformer.from_crs(
+                self.wgs84, self.ease2_north, always_xy=True
+            )
+        else:  # pole == "S"
+            self.transformer = pyproj.Transformer.from_crs(
+                self.wgs84, self.ease2_south, always_xy=True
+            )
 
         # Create enhanced grids
         grid = np.zeros((self.ENHANCED_GRID_HEIGHT, self.ENHANCED_GRID_WIDTH), dtype=np.float64)
@@ -505,7 +516,7 @@ class EnhancedPolarProcessor:
         # Process each enhanced swath
         for swath_idx, swath in enumerate(enhanced_swaths):
             self._add_enhanced_swath_to_grid(
-                swath, grid, weight, count, swath_idx
+                swath, grid, weight, count, swath_idx, pole
             )
 
         # Finalize grid
@@ -518,26 +529,30 @@ class EnhancedPolarProcessor:
 
     def _add_enhanced_swath_to_grid(self, swath: Dict, grid: np.ndarray,
                                     weight: np.ndarray, count: np.ndarray,
-                                    swath_idx: int):
+                                    swath_idx: int, pole: str = "N"):
         """Add enhanced swath data to grid"""
         temp = swath['temperature']
         lat = swath['lat']
         lon = swath['lon']
 
-        # Filter for Northern Hemisphere
-        north_mask = lat >= 0
-        if not np.any(north_mask):
+        # Filter for correct hemisphere
+        if pole == "N":
+            hemisphere_mask = lat >= 0
+        else:  # pole == "S"
+            hemisphere_mask = lat <= 0
+
+        if not np.any(hemisphere_mask):
             return
 
         # Transform to EASE-Grid 2.0
-        x_ease2, y_ease2 = self._latlon_to_ease2_north(lat, lon)
+        x_ease2, y_ease2 = self._latlon_to_ease2(lat, lon)
 
         # Get grid bounds
         x_min, x_max, y_min, y_max = self._get_grid_bounds()
 
         # Valid data mask
         valid_mask = (
-                north_mask &
+                hemisphere_mask &
                 ~np.isnan(temp) &
                 (x_ease2 >= x_min) & (x_ease2 <= x_max) &
                 (y_ease2 >= y_min) & (y_ease2 <= y_max)
@@ -579,8 +594,8 @@ class EnhancedPolarProcessor:
             weight[y_idx, x_idx] += 1.0
             count[y_idx, x_idx] += 1
 
-    def _latlon_to_ease2_north(self, lat, lon):
-        """Transform coordinates to EASE-Grid 2.0 North"""
+    def _latlon_to_ease2(self, lat, lon):
+        """Transform coordinates to EASE-Grid 2.0 (North or South based on current transformer)"""
         x, y = self.transformer.transform(lon, lat)
         x = np.where(np.isinf(x), np.nan, x)
         y = np.where(np.isinf(y), np.nan, y)
