@@ -65,6 +65,39 @@ class TemperatureSRProcessor:
         logger.info(f"Model loaded from {model_path}")
         return model
 
+    def extract_coordinates_from_h5(self, h5_path: pathlib.Path) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Extract latitude and longitude coordinates from HDF5 file
+        """
+        import h5py
+
+        with h5py.File(h5_path, "r") as h5:
+            lat_89 = None
+            lon_89 = None
+
+            # Find 89 GHz coordinates
+            for suffix in ["89A", "89B"]:
+                lat_key = f"Latitude of Observation Point for {suffix}"
+                lon_key = f"Longitude of Observation Point for {suffix}"
+
+                if lat_key in h5 and lon_key in h5:
+                    lat_89 = h5[lat_key][:]
+                    lon_89 = h5[lon_key][:]
+                    break
+
+            if lat_89 is None:
+                raise ValueError("Coordinates not found in file!")
+
+            # Downsample if needed for 36.5 GHz
+            if lat_89.shape[1] == 486:  # High resolution
+                lat_36 = lat_89[:, ::2]
+                lon_36 = lon_89[:, ::2]
+            else:
+                lat_36 = lat_89
+                lon_36 = lon_89
+
+            return lat_36, lon_36
+
     def process_single_strip_8x(self, temperature_data: np.ndarray,
                                 coordinates_lat: np.ndarray,
                                 coordinates_lon: np.ndarray,
@@ -394,7 +427,7 @@ class TemperatureSRProcessor:
                 continue
 
             # Extract coordinates
-            lat, lon = self.enhanced_processor.extract_coordinates_from_h5(h5_file)
+            lat, lon = self.extract_coordinates_from_h5(h5_file)
 
             # Enhance temperature to 8x
             enhanced_result = self.process_single_strip_8x(
