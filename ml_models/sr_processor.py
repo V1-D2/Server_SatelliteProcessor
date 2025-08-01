@@ -394,8 +394,7 @@ class TemperatureSRProcessor:
                 continue
 
             # Extract coordinates
-            image_processor = ImageProcessor()
-            lat, lon = image_processor._calculate_lat_lon_36ghz(h5_file)
+            lat, lon = self.enhanced_processor.extract_coordinates_from_h5(h5_file)
 
             # Enhance temperature to 8x
             enhanced_result = self.process_single_strip_8x(
