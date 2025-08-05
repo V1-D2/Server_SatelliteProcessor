@@ -61,11 +61,26 @@ def process_single_strip(params: dict, output_dir: pathlib.Path, job_id: str) ->
 
         try:
             # Get available files for date
+            # Get available files for date
+            logger.info(f"Searching for files on date: {date_str}")
             all_files = gportal_client.list_files_for_date(date_str)
 
             if not all_files:
                 logger.error(f"No files available for {date_str}")
-                return False
+                logger.info("Trying to search with gportal directly...")
+                try:
+                    # Direct search as fallback
+                    available_files = gportal_client.check_availability(date_str, None)
+                    if available_files:
+                        all_files = available_files
+                        logger.info(f"Found {len(all_files)} files via direct search")
+                    else:
+                        return False
+                except Exception as e:
+                    logger.error(f"Direct search also failed: {e}")
+                    return False
+
+            logger.info(f"Available files: {[f['name'] for f in all_files]}")
 
             # Select file
             if file_name:
@@ -76,12 +91,13 @@ def process_single_strip(params: dict, output_dir: pathlib.Path, job_id: str) ->
                         file_info = f
                         break
                 if not file_info:
-                    logger.error(f"File {file_name} not found")
+                    logger.error(f"File {file_name} not found in available files")
+                    logger.info(f"Available files: {[f['name'] for f in all_files]}")
                     return False
             else:
                 # Use index
                 if file_index >= len(all_files):
-                    logger.error(f"File index {file_index} out of range")
+                    logger.error(f"File index {file_index} out of range (max: {len(all_files) - 1})")
                     return False
                 file_info = all_files[file_index]
 
