@@ -5,8 +5,8 @@
 #SBATCH --partition=salvador  # Adjust based on your cluster
 #SBATCH --gres=gpu:turing:1
 #SBATCH --cpus-per-gpu=4
-#SBATCH --mem-per-gpu=32G
-#SBATCH --time=04:00:00
+#SBATCH --mem-per-gpu=16G
+#SBATCH --time=01:00:00
 
 echo "============================================"
 echo "SatelliteProcessor CLI Job Started: $(date)"
