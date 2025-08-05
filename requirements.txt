@@ -10,16 +10,24 @@ xarray>=0.19.0
 # Progress bars
 tqdm>=4.60.0
 
-# For GPORTAL API (assuming it's available via pip, otherwise needs manual installation)
-# gportal
+# PyTorch for ML models (CPU/GPU support)
+torch>=2.0.0
+torchvision>=0.15.0
 
-# GUI (tkinter is included with Python)
+# OpenCV for image processing
+opencv-python-headless>=4.5.0
 
-# Build tools (for creating executable)
-pyinstaller>=5.0
+# For GPORTAL API
+requests>=2.25.0
+# gportal  # Install manually if not available via pip
 
-# Optional dependencies for development
-# pytest>=6.0.0
-# black>=21.0
-# flake8>=3.9.0
-torch-directml; sys_platform == "win32"
+# Additional ML dependencies
+timm>=0.9.0  # For SwinIR models
+
+# Server-specific optimizations
+numba>=0.53.0  # For numerical acceleration
+joblib>=1.0.0  # For parallel processing
+
+# Optional but recommended
+psutil>=5.8.0  # For system monitoring
+pyyaml>=5.4.0  # For configuration files
