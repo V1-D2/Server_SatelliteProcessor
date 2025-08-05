@@ -91,6 +91,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+cd /home/vdidur/Server_SatelliteProcessor/run
 echo "============================================"
 echo "Starting SatelliteProcessor CLI"
 echo "Mode: $([ "$BATCH_MODE" = true ] && echo "Batch" || echo "Interactive")"
