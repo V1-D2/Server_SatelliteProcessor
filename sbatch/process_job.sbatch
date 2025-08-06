@@ -6,7 +6,7 @@
 #SBATCH --gres=gpu:turing:1
 #SBATCH --cpus-per-gpu=4
 #SBATCH --mem-per-gpu=64G
-#SBATCH --time=2:00:00
+#SBATCH --time=24:00:00
 
 echo "============================================"
 echo "SatelliteProcessor Job Started: $(date)"
