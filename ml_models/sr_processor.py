@@ -682,7 +682,6 @@ class EnhancedPolarProcessor:
         return final_grid
 
     def _fill_holes_enhanced(self, data):
-        """Fill holes in enhanced resolution data"""
         filled_data = data.copy()
         rows, cols = data.shape
 
@@ -690,10 +689,10 @@ class EnhancedPolarProcessor:
         if not np.any(empty_mask):
             return filled_data
 
-        # Scale parameters for enhanced resolution
-        MIN_RADIUS = 2 * self.scale_factor
-        MAX_RADIUS = 6 * self.scale_factor
-        DISTANCE_SCALE = 400 * self.scale_factor
+        # ИСПРАВЛЕННЫЕ параметры - НЕ масштабируем на scale_factor
+        MIN_RADIUS = 3  # Немного больше чем обычный (2)
+        MAX_RADIUS = 8  # Немного больше чем обычный (6)
+        DISTANCE_SCALE = 500  # Немного больше чем обычный (400)
 
         # Calculate distance from center
         center_y, center_x = rows // 2, cols // 2
