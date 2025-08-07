@@ -103,7 +103,8 @@ class TemperatureSRProcessor:
     def process_single_strip_8x(self, temperature_data: np.ndarray,
                                 coordinates_lat: np.ndarray,
                                 coordinates_lon: np.ndarray,
-                                metadata: Dict) -> Dict:
+                                metadata: Dict,
+                                overlap_ratio: float = 0.75) -> Dict:
         """
         Process single strip with 8x enhancement
 
@@ -128,15 +129,15 @@ class TemperatureSRProcessor:
 
         # Stage 1: First 2x enhancement
         logger.info("Stage 1: First 2x enhancement")
-        sr_2x, stats_2x = self._enhance_2x(temperature_data)
+        sr_2x, stats_2x = self._enhance_2x(temperature_data, overlap_ratio=overlap_ratio)
 
         # Stage 2: Second 2x enhancement (4x total)
         logger.info("Stage 2: Second 2x enhancement (4x total)")
-        sr_4x, stats_4x = self._enhance_2x(sr_2x)
+        sr_4x, stats_4x = self._enhance_2x(sr_2x, overlap_ratio=overlap_ratio)
 
         # Stage 3: Third 2x enhancement (8x total)
         logger.info("Stage 3: Third 2x enhancement (8x total)")
-        sr_8x, stats_8x = self._enhance_2x(sr_4x)
+        sr_8x, stats_8x = self._enhance_2x(sr_4x, overlap_ratio=overlap_ratio)
 
         # Upscale coordinates by 8x
         logger.info("Upscaling coordinates 8x")
@@ -434,7 +435,8 @@ class TemperatureSRProcessor:
             # Enhance temperature to 8x
             enhanced_result = self.process_single_strip_8x(
                 temp_data, lat, lon,
-                {'orbit_type': orbit_type, 'scale_factor': scale_factor}
+                {'orbit_type': orbit_type, 'scale_factor': scale_factor},
+                overlap_ratio=0.25  # Fast processing for polar region
             )
 
             enhanced_swaths.append({
