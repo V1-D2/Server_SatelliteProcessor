@@ -568,6 +568,7 @@ class EnhancedPolarProcessor:
 
         # Process each enhanced swath
         for swath_idx, swath in enumerate(enhanced_swaths):
+            print(f"Creating polar image: processing swath {swath_idx + 1}/{len(enhanced_swaths)}")
             self._add_enhanced_swath_to_grid(
                 swath, grid, weight, count, swath_idx, pole
             )
