@@ -200,7 +200,7 @@ class TemperatureSRProcessor:
 
     def _enhance_2x(self, temperature: np.ndarray,
                     patch_size: Tuple[int, int] = (1000, 110),
-                    overlap_ratio: float = 0.75) -> Tuple[np.ndarray, Dict]:
+                    overlap_ratio: float = 0.25) -> Tuple[np.ndarray, Dict]:
         """Single 2x enhancement step with proper patch sizing"""
         h, w = temperature.shape
 
