@@ -104,7 +104,7 @@ class TemperatureSRProcessor:
                                 coordinates_lat: np.ndarray,
                                 coordinates_lon: np.ndarray,
                                 metadata: Dict,
-                                overlap_ratio: float = 0.75) -> Dict:
+                                overlap_ratio: float = 0.25) -> Dict:
         """
         Process single strip with 8x enhancement
 
