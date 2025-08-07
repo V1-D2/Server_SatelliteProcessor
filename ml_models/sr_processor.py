@@ -144,6 +144,11 @@ class TemperatureSRProcessor:
         coords_lat_8x = self._upscale_coordinates(coordinates_lat, scale=8)
         coords_lon_8x = self._upscale_coordinates(coordinates_lon, scale=8)
 
+        # Ensure coordinates match temperature dimensions
+        if coords_lat_8x.shape != sr_8x.shape:
+            coords_lat_8x = cv2.resize(coords_lat_8x, (sr_8x.shape[1], sr_8x.shape[0]), interpolation=cv2.INTER_LINEAR)
+            coords_lon_8x = cv2.resize(coords_lon_8x, (sr_8x.shape[1], sr_8x.shape[0]), interpolation=cv2.INTER_LINEAR)
+
         # Create bicubic baseline for comparison
         bicubic_8x = cv2.resize(temperature_data,
                                 (temperature_data.shape[1] * 8, temperature_data.shape[0] * 8),
@@ -369,29 +374,22 @@ class TemperatureSRProcessor:
 
     def _upscale_coordinates(self, coords: np.ndarray, scale: int = 8) -> np.ndarray:
         """
-        Upscale coordinate array by given scale factor
-
-        The corner coordinates remain the same, with interpolated values in between
+        Upscale coordinate array by given scale factor to match temperature dimensions
         """
         if len(coords.shape) == 1:
-            # 1D coordinate array
+            # 1D coordinate array - scale to match temperature width/height
             n = len(coords)
-            new_n = (n - 1) * scale + 1
-
-            # Create interpolation indices
+            new_n = n * scale  # Simple scaling to match temperature
             old_indices = np.arange(n)
             new_indices = np.linspace(0, n - 1, new_n)
-
-            # Interpolate
             upscaled = np.interp(new_indices, old_indices, coords)
-
         else:
-            # 2D coordinate array
+            # 2D coordinate array - scale to match temperature dimensions exactly
             h, w = coords.shape
-            new_h = (h - 1) * scale + 1
-            new_w = (w - 1) * scale + 1
+            new_h = h * scale  # Match temperature scaling
+            new_w = w * scale
 
-            # Use cv2 for 2D interpolation
+            # Use cv2 for 2D interpolation with exact dimensions
             upscaled = cv2.resize(coords, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
 
         return upscaled
