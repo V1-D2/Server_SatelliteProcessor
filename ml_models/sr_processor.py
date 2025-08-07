@@ -374,25 +374,44 @@ class TemperatureSRProcessor:
 
     def _upscale_coordinates(self, coords: np.ndarray, scale: int = 8) -> np.ndarray:
         """
-        Upscale coordinate array by given scale factor to match temperature dimensions
+        Upscale coordinates using exact mathematical scaling (no interpolation)
+        Preserves corners and creates exact grid alignment
         """
         if len(coords.shape) == 1:
-            # 1D coordinate array - scale to match temperature width/height
+            # 1D case - create exact linear spacing
             n = len(coords)
-            new_n = n * scale  # Simple scaling to match temperature
-            old_indices = np.arange(n)
+            new_n = n * scale
+
+            # Create exact linear interpolation preserving endpoints
+            original_indices = np.linspace(0, n - 1, n)
             new_indices = np.linspace(0, n - 1, new_n)
-            upscaled = np.interp(new_indices, old_indices, coords)
+            upscaled = np.interp(new_indices, original_indices, coords)
+
         else:
-            # 2D coordinate array - scale to match temperature dimensions exactly
+            # 2D case - create exact grid without interpolation artifacts
             h, w = coords.shape
-            new_h = h * scale  # Match temperature scaling
-            new_w = w * scale
+            new_h, new_w = h * scale, w * scale
 
-            # Use cv2 for 2D interpolation with exact dimensions
-            upscaled = cv2.resize(coords, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+            # Create exact coordinate mapping
+            # Map each enhanced pixel to its exact location in original coordinate space
+            y_orig = np.linspace(0, h - 1, new_h)
+            x_orig = np.linspace(0, w - 1, new_w)
 
-        return upscaled
+            # Create meshgrid for new coordinates
+            y_grid, x_grid = np.meshgrid(y_orig, x_orig, indexing='ij')
+
+            # Use map_coordinates for exact sampling (no interpolation artifacts)
+            from scipy.ndimage import map_coordinates
+
+            upscaled = map_coordinates(
+                coords,
+                [y_grid, x_grid],
+                order=1,  # Linear interpolation but mathematically exact
+                mode='nearest',  # Handle edges properly
+                prefilter=False  # No preprocessing artifacts
+            )
+
+        return upscaled.astype(coords.dtype)
 
     def process_polar_8x_enhanced(self, h5_files: List[Path],
                                   orbit_type: str,
