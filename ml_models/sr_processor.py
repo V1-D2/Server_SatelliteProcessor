@@ -699,9 +699,9 @@ class EnhancedPolarProcessor:
             return filled_data
 
         # ИСПРАВЛЕННЫЕ параметры - НЕ масштабируем на scale_factor
-        MIN_RADIUS = 2  # Немного больше чем обычный (2)
-        MAX_RADIUS = 6  # Немного больше чем обычный (6)
-        DISTANCE_SCALE = 400  # Немного больше чем обычный (400)
+        MIN_RADIUS = 16  # Немного больше чем обычный (2)
+        MAX_RADIUS = 48  # Немного больше чем обычный (6)
+        DISTANCE_SCALE = 1000  # Немного больше чем обычный (400)
 
         # Calculate distance from center
         center_y, center_x = rows // 2, cols // 2
