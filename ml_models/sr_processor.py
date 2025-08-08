@@ -406,7 +406,7 @@ class TemperatureSRProcessor:
             upscaled = map_coordinates(
                 coords,
                 [y_grid, x_grid],
-                order=0,  # Linear interpolation but mathematically exact
+                order=1,  # Linear interpolation but mathematically exact
                 mode='nearest',  # Handle edges properly
                 prefilter=False  # No preprocessing artifacts
             )
@@ -699,8 +699,8 @@ class EnhancedPolarProcessor:
             return filled_data
 
         # ИСПРАВЛЕННЫЕ параметры - НЕ масштабируем на scale_factor
-        MIN_RADIUS = 16  # Немного больше чем обычный (2)
-        MAX_RADIUS = 48  # Немного больше чем обычный (6)
+        MIN_RADIUS = 6  # Немного больше чем обычный (2)
+        MAX_RADIUS = 18  # Немного больше чем обычный (6)
         DISTANCE_SCALE = 1000  # Немного больше чем обычный (400)
 
         # Calculate distance from center
