@@ -665,11 +665,13 @@ class EnhancedPolarProcessor:
         return x, y
 
     def _meters_to_pixels_enhanced(self, x_m, y_m):
-        """Convert EASE-Grid 2.0 coordinates to enhanced pixel indices"""
-        px_x = ((x_m - self.MAP_ORIGIN_X) / self.ENHANCED_PIXEL_SIZE_M +
-                self.GRID_ORIGIN_COL).astype(np.int32)
-        px_y = ((self.MAP_ORIGIN_Y - y_m) / self.ENHANCED_PIXEL_SIZE_M +
-                self.GRID_ORIGIN_ROW).astype(np.int32)
+        # Добавить sub-pixel precision
+        px_x_float = (x_m - self.MAP_ORIGIN_X) / self.ENHANCED_PIXEL_SIZE_M + self.GRID_ORIGIN_COL
+        px_y_float = (self.MAP_ORIGIN_Y - y_m) / self.ENHANCED_PIXEL_SIZE_M + self.GRID_ORIGIN_ROW
+
+        # Round instead of truncate для better distribution
+        px_x = np.round(px_x_float).astype(np.int32)
+        px_y = np.round(px_y_float).astype(np.int32)
         return px_x, px_y
 
     def _get_grid_bounds(self):
@@ -688,7 +690,29 @@ class EnhancedPolarProcessor:
         if np.any(valid_mask):
             final_grid[valid_mask] = (grid[valid_mask] / weight[valid_mask]).astype(np.float32)
 
-        return final_grid
+            # Post-processing: smooth boundary artifacts
+            try:
+                from scipy import ndimage
+
+                # Identify boundary areas (pixels with low weight = potential artifacts)
+                boundary_mask = (weight > 0) & (weight < np.percentile(weight[weight > 0], 25))
+
+                if np.any(boundary_mask):
+                    # Apply gentle smoothing only to boundary areas
+                    smoothed = ndimage.gaussian_filter(final_grid, sigma=0.5, mode='nearest')
+
+                    # Blend original and smoothed for boundary pixels only
+                    blend_factor = 0.3  # 30% smoothing
+                    final_grid[boundary_mask] = (
+                            (1 - blend_factor) * final_grid[boundary_mask] +
+                            blend_factor * smoothed[boundary_mask]
+                    )
+
+            except ImportError:
+                # scipy not available, skip smoothing
+                pass
+
+            return final_grid
 
     def _fill_holes_enhanced(self, data):
         filled_data = data.copy()
