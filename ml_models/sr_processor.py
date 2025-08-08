@@ -372,7 +372,7 @@ class TemperatureSRProcessor:
 
         return gaussian.astype(np.float32)
 
-    def _upscale_coordinates_main(self, coords: np.ndarray, scale: int = 8) -> np.ndarray:
+    def _upscale_coordinates(self, coords: np.ndarray, scale: int = 8) -> np.ndarray:
         """
         Upscale coordinates using exact mathematical scaling (no interpolation)
         Preserves corners and creates exact grid alignment
@@ -406,14 +406,14 @@ class TemperatureSRProcessor:
             upscaled = map_coordinates(
                 coords,
                 [y_grid, x_grid],
-                order=1,  # Linear interpolation but mathematically exact
+                order=0,  # Linear interpolation but mathematically exact
                 mode='nearest',  # Handle edges properly
                 prefilter=False  # No preprocessing artifacts
             )
 
         return upscaled.astype(coords.dtype)
 
-    def _upscale_coordinates(self, coords: np.ndarray, scale: int = 8) -> np.ndarray:
+    def _upscale_coordinates_main(self, coords: np.ndarray, scale: int = 8) -> np.ndarray:
         """Sharp coordinate upscaling - each coordinate becomes exact scale×scale block"""
         if len(coords.shape) == 1:
             # 1D: repeat each value scale times
