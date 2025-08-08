@@ -271,7 +271,7 @@ class ServerDiagnostic:
         """Check ML model files"""
         print(f"\n{BLUE}Checking ML models...{RESET}")
 
-        model_path = self.server_root / 'ml_models' / 'checkpoints' / 'net_g_45738.pth'
+        model_path = self.server_root / 'ml_models' / 'checkpoints' / 'SwinIR-RealESRGAN_net_g_60000_4th_epoch_Strong_Discriminator.pth'
 
         if model_path.exists():
             size_mb = model_path.stat().st_size / (1024 * 1024)
@@ -285,7 +285,7 @@ class ServerDiagnostic:
             except Exception as e:
                 self.log_issue(f"✗ Error loading model: {e}")
         else:
-            self.log_issue("✗ ML model net_g_45738.pth not found")
+            self.log_issue("✗ ML model SwinIR-RealESRGAN_net_g_60000_4th_epoch_Strong_Discriminator.pth not found")
             self.log_issue("  Functions 3 and 4 will not work without this model")
 
     def check_disk_space(self):

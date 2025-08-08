@@ -45,7 +45,7 @@ def process_enhance_8x(params: dict, output_dir: pathlib.Path, job_id: str) -> b
         logger.info(f"Processing 8x enhancement: date={date_str}, file_index={file_index}")
 
         # Check for ML model
-        model_path = pathlib.Path(__file__).parent.parent / "ml_models" / "checkpoints" / "net_g_45738.pth"
+        model_path = pathlib.Path(__file__).parent.parent / "ml_models" / "checkpoints" / "SwinIR-RealESRGAN_net_g_60000_4th_epoch_Strong_Discriminator.pth"
         if not model_path.exists():
             logger.error(f"ML model not found at {model_path}")
             return False

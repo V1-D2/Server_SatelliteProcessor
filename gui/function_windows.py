@@ -621,7 +621,7 @@ class Enhance8xWindow(BaseFunctionWindow):
         self.available_files = []
 
         # Initialize ML processor
-        model_path = pathlib.Path(__file__).parent.parent / "ml_models" / "checkpoints" / "net_g_45738.pth"
+        model_path = pathlib.Path(__file__).parent.parent / "ml_models" / "checkpoints" / "SwinIR-RealESRGAN_net_g_60000_4th_epoch_Strong_Discriminator.pth"
         if model_path.exists():
             if torch is not None:
                 device_obj, device_name = get_best_device()
@@ -650,7 +650,7 @@ class Enhance8xWindow(BaseFunctionWindow):
             # Show error if model not found
             error_label = tk.Label(
                 self.window,
-                text="Error: ML model not found!\nPlease ensure net_g_66099.pth is in ml_models/checkpoints/",
+                text="Error: ML model not found!\nPlease ensure SwinIR-RealESRGAN_net_g_60000_4th_epoch_Strong_Discriminator.pth is in ml_models/checkpoints/",
                 font=("Arial", 12),
                 fg="red"
             )
@@ -960,7 +960,7 @@ class PolarEnhanced8xWindow(BaseFunctionWindow):
         self.center_window(500, 350)
 
         # Initialize ML processor
-        model_path = pathlib.Path(__file__).parent.parent / "ml_models" / "checkpoints" / "net_g_45738.pth"
+        model_path = pathlib.Path(__file__).parent.parent / "ml_models" / "checkpoints" / "SwinIR-RealESRGAN_net_g_60000_4th_epoch_Strong_Discriminator.pth"
         if model_path.exists():
             if torch is not None:
                 device_obj, device_name = get_best_device()
@@ -989,7 +989,7 @@ class PolarEnhanced8xWindow(BaseFunctionWindow):
             # Show error if model not found
             error_label = tk.Label(
                 self.window,
-                text="Error: ML model not found!\nPlease ensure net_g_45738.pth is in ml_models/checkpoints/",
+                text="Error: ML model not found!\nPlease ensure SwinIR-RealESRGAN_net_g_60000_4th_epoch_Strong_Discriminator.pth is in ml_models/checkpoints/",
                 font=("Arial", 12),
                 fg="red"
             )
