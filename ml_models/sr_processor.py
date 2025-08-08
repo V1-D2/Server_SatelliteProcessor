@@ -372,7 +372,7 @@ class TemperatureSRProcessor:
 
         return gaussian.astype(np.float32)
 
-    def _upscale_coordinates(self, coords: np.ndarray, scale: int = 8) -> np.ndarray:
+    def _upscale_coordinates_main(self, coords: np.ndarray, scale: int = 8) -> np.ndarray:
         """
         Upscale coordinates using exact mathematical scaling (no interpolation)
         Preserves corners and creates exact grid alignment
@@ -412,6 +412,15 @@ class TemperatureSRProcessor:
             )
 
         return upscaled.astype(coords.dtype)
+
+    def _upscale_coordinates(self, coords: np.ndarray, scale: int = 8) -> np.ndarray:
+        """Sharp coordinate upscaling - each coordinate becomes exact scale×scale block"""
+        if len(coords.shape) == 1:
+            # 1D: repeat each value scale times
+            return np.repeat(coords, scale)
+        else:
+            # 2D: repeat each coordinate exactly scale×scale times
+            return np.repeat(np.repeat(coords, scale, axis=0), scale, axis=1)
 
     def process_polar_8x_enhanced(self, h5_files: List[Path],
                                   orbit_type: str,
@@ -690,9 +699,9 @@ class EnhancedPolarProcessor:
             return filled_data
 
         # ИСПРАВЛЕННЫЕ параметры - НЕ масштабируем на scale_factor
-        MIN_RADIUS = 3  # Немного больше чем обычный (2)
-        MAX_RADIUS = 8  # Немного больше чем обычный (6)
-        DISTANCE_SCALE = 500  # Немного больше чем обычный (400)
+        MIN_RADIUS = 2  # Немного больше чем обычный (2)
+        MAX_RADIUS = 6  # Немного больше чем обычный (6)
+        DISTANCE_SCALE = 400  # Немного больше чем обычный (400)
 
         # Calculate distance from center
         center_y, center_x = rows // 2, cols // 2
