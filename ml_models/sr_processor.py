@@ -648,14 +648,29 @@ class EnhancedPolarProcessor:
         px_y = px_y[valid_pixels]
         temp_vals = temp_vals[valid_pixels]
 
-        # Accumulate data
+        # Accumulate data with anti-aliasing
         for i in range(len(temp_vals)):
             x_idx, y_idx = px_x[i], px_y[i]
             value = temp_vals[i]
 
+            # Main pixel gets full weight
             grid[y_idx, x_idx] += value
             weight[y_idx, x_idx] += 1.0
             count[y_idx, x_idx] += 1
+
+            # Anti-aliasing: distribute small amount to neighbors
+            for dy in [-1, 0, 1]:
+                for dx in [-1, 0, 1]:
+                    if dx == 0 and dy == 0:
+                        continue  # Skip center pixel (already processed)
+
+                    ny, nx = y_idx + dy, x_idx + dx
+                    if 0 <= ny < self.ENHANCED_GRID_HEIGHT and 0 <= nx < self.ENHANCED_GRID_WIDTH:
+                        distance_weight = 1.0 / (1.0 + abs(dx) + abs(dy))
+                        contribution = 0.05  # 5% contribution to neighbors
+
+                        grid[ny, nx] += value * distance_weight * contribution
+                        weight[ny, nx] += distance_weight * contribution
 
     def _latlon_to_ease2(self, lat, lon):
         """Transform coordinates to EASE-Grid 2.0 (North or South based on current transformer)"""
